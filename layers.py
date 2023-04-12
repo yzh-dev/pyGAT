@@ -16,24 +16,24 @@ class GraphAttentionLayer(nn.Module):
         self.alpha = alpha
         self.concat = concat
 
-        self.W = nn.Parameter(torch.empty(size=(in_features, out_features)))
+        self.W = nn.Parameter(torch.empty(size=(in_features, out_features)))#W权重
         nn.init.xavier_uniform_(self.W.data, gain=1.414)
-        self.a = nn.Parameter(torch.empty(size=(2*out_features, 1)))
+        self.a = nn.Parameter(torch.empty(size=(2*out_features, 1)))#2*out_features：拼接W*h_i和W*h_j，拼接后乘以a矩阵得到注意力值
         nn.init.xavier_uniform_(self.a.data, gain=1.414)
 
         self.leakyrelu = nn.LeakyReLU(self.alpha)
 
     def forward(self, h, adj):
         Wh = torch.mm(h, self.W) # h.shape: (N, in_features), Wh.shape: (N, out_features)
-        e = self._prepare_attentional_mechanism_input(Wh)
+        e = self._prepare_attentional_mechanism_input(Wh)#节点之间的attention分数
 
         zero_vec = -9e15*torch.ones_like(e)
-        attention = torch.where(adj > 0, e, zero_vec)
-        attention = F.softmax(attention, dim=1)
+        attention = torch.where(adj > 0, e, zero_vec)#保留e中有连接的节点之间的attention分数
+        attention = F.softmax(attention, dim=1)#attention系数，按行求softmax:attention.sum(axis=1)应该等于1
         attention = F.dropout(attention, self.dropout, training=self.training)
-        h_prime = torch.matmul(attention, Wh)
+        h_prime = torch.matmul(attention, Wh)#按照注意力对邻居节点进行聚合
 
-        if self.concat:
+        if self.concat:#隐含层
             return F.elu(h_prime)
         else:
             return h_prime

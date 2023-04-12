@@ -9,7 +9,7 @@ class GAT(nn.Module):
         """Dense version of GAT."""
         super(GAT, self).__init__()
         self.dropout = dropout
-
+        # nheads多头注意力，默认等于8
         self.attentions = [GraphAttentionLayer(nfeat, nhid, dropout=dropout, alpha=alpha, concat=True) for _ in range(nheads)]
         for i, attention in enumerate(self.attentions):
             self.add_module('attention_{}'.format(i), attention)
